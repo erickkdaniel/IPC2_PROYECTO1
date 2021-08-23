@@ -3,7 +3,7 @@ from xml.dom import minidom
 import os
 import graphviz
 
-j=1 
+
 class Nodo:
     def __init__(self,data):
         self.data = data
@@ -58,9 +58,6 @@ class Ground:
     def getName(self):
         return self.nameGround
     def NewAreaX(self,comb,coorX,coorY):
-        global j 
-        print("Nodo",j)
-        j+=1
         print(coorX,coorY)
         if self.raiz.next == None:#Recorrido en X
             aux = Nodo(Area(None,coorX,None))
@@ -302,26 +299,44 @@ def processGround():
                                     NodoFinal=aux
                                     print(NodoInicio.data.coorx,NodoInicio.data.coory,NodoFinal.data.coorx, NodoFinal.data.coory)
                                     listCamino = camino(NodoInicio,NodoFinal)
-                                    printCamino()                                    
+                                    printCamino(AuxGround,listCamino) 
+                                    return                                   
                                 aux = aux.next    
                         aux = aux.down
                 aux = aux.next       
         aux = aux.down
 def printCamino(Ground,listCamino):
-    Ground
+    aux = Ground.raiz
+    aux = aux.down
+    while aux:
+        fila="|"
+        auxf = aux.next
+        while auxf:
+            try:
+                n = listCamino.index(auxf)
+            except:
+                n = -1
+            if n !=-1:
+                fila = fila + " 1 |"
+            else:
+                fila = fila + " 0 |"
+                
+
+            auxf = auxf.next
+        print(fila)
+        aux = aux.down
 
     
 
 def camino(inicio,fin):
     lista = []
     resultado = caminoRecorrer(inicio,lista,fin)
-    for c in resultado:
-        print(c.data.coorx,c.data.coory)
+    return resultado
 
 def caminoRecorrer(actual,listaRecorridos,fin):
     if(actual is  None):
         return False
-        
+
     if(actual.data.comb is None):
         return False
 
