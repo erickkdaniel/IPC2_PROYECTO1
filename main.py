@@ -1,7 +1,7 @@
 import re
 from xml.dom import minidom
 import os
-import graphviz
+#import graphviz
 
 
 class Nodo:
@@ -11,6 +11,10 @@ class Nodo:
         self.prev = None
         self.up = None
         self.down = None
+
+        self.link = None
+        self.linkCost = 0
+
 class NodoGround:
     def __init__(self,data):
         self.data = data
@@ -346,7 +350,8 @@ def processGround():
                                 if aux.data.coorx == AuxGround.finalX:
                                     NodoFinal=aux
                                     print(NodoInicio.data.coorx,NodoInicio.data.coory,NodoFinal.data.coorx, NodoFinal.data.coory)
-                                    listCamino = camino(NodoInicio,NodoFinal)
+                                    #listCamino = camino(NodoInicio,NodoFinal)
+                                    listCamino = road(NodoInicio,NodoFinal,AuxGround.dimX,AuxGround.dimY,AuxGround.raiz)
                                     AuxGround.setlistCamino(listCamino)
                                     printCamino(AuxGround,listCamino) 
                                     input()
@@ -376,89 +381,58 @@ def printCamino(Ground,listCamino):
         print(fila)
         aux = aux.down
 
-costomin = -1 
 
-
-def camino(inicio,fin):
-    lista = []
-    global costomin
-    costomin = -1
-    resultado = caminoRecorrer(inicio,lista,fin,True,False)
-    return resultado
-
-def caminoRecorrer(actual,listaRecorridos,fin,band,costoH):
-    if(actual is  None):
-        return False
-
-    if(actual.data.comb is None):
-        return False
-
-    if(actual==fin):
-        listaRecorridos.append(actual)
-        return listaRecorridos
-    global costomin
-    costoActual = evaluarCosto(listaRecorridos)
-    if costomin <= costoActual and costomin > -1:
-        return False
+def road(start,end,dimX,dimY,root):
+    bigger = dimX
+    if dimY > dimX:
+        bigger = dimY
     
-    for item in listaRecorridos:
-        if(item==actual):
-            
-            return  False
+    for r in range(0,5*bigger):
+        yPointer = root.down.next
+        for y in range(0,dimY):
+            xPointer = yPointer
+            for i in range(0,dimX): 
+                updateLink(start,end,xPointer,xPointer.down)
+                updateLink(start,end,xPointer,xPointer.up)
+                updateLink(start,end,xPointer,xPointer.next)
+                updateLink(start,end,xPointer,xPointer.prev)
+                xPointer=xPointer.next
 
 
-    nuevaLista = listaRecorridos.copy()
-    nuevaLista.append(actual)
-
-    if costoH is not False and costoH <= costoActual:
-        return False
-
-    camino1 = caminoRecorrer(actual.next,nuevaLista,fin,False,costoH)
-    costoEvaluar1 = costoH if camino1 == False else evaluarCosto(camino1) 
-    camino2 = caminoRecorrer(actual.down,nuevaLista,fin,False,costoEvaluar1)
-    costoEvaluar2 = costoH if camino2 == False else evaluarCosto(camino2)
-    camino3 = caminoRecorrer(actual.up,nuevaLista,fin,False,costoEvaluar2)
-    costoEvaluar3 = costoH if camino3 == False else  evaluarCosto(camino3)
-    camino4 = caminoRecorrer(actual.prev,nuevaLista,fin,False,costoEvaluar3)
-    costoEvaluar4 = costoH if camino4 == False else  evaluarCosto(camino4)
+            yPointer = yPointer.down
     
-    tupla1 = (costoEvaluar1,camino1)
-    tupla2 = (costoEvaluar2,camino2)
-    tupla3 = (costoEvaluar3,camino3)
-    tupla4 = (costoEvaluar4,camino4)
+    lstRet = []
+    nextPtr = end.link 
+    while nextPtr is not start:
+        lstRet.append(nextPtr)
+        nextPtr = nextPtr.link
+    lstRet.append(start)
+    lstRet.append(end)
+    return lstRet
 
-    cmp1 = compararCosto(tupla1,tupla2)
-    cmp2 = compararCosto(tupla3,tupla4)
-    compFinal = compararCosto(cmp1,cmp2)[1]
-    costoFinal = evaluarCosto(compFinal)
-    if costomin == -1 and band: 
-        costomin = costoFinal
-    if costomin > costoFinal and band:
-        costomin = costoFinal
-    return compFinal
-def compararCosto(costo1,costo2):
-    if(costo1[0] == False and costo2[0] == False):
-        return (False,False)
-    if(costo1[0] == False):
-        return costo2
-    if(costo2[0] == False):
-        return costo1
-    if(costo1[0]<=costo2[0]):
-        return costo1
-    else:
-        return costo2
+def updateLink(start,end,node,neighbor):
+    if(neighbor is None or neighbor.data.comb is None):
+        return 
+    if(neighbor==end and end.link is not None):
+        return True
 
-def evaluarCosto(lst):
-    if(lst is False):
-        return False
+    if(neighbor==start):
+        node.linkCost = start.data.comb  + node.data.comb 
+        node.link = neighbor
+        return
+    if neighbor.link is not None:
+        if node.linkCost is 0:
+            node.linkCost = neighbor.linkCost + node.data.comb
+            node.link = neighbor
+        elif node.linkCost > neighbor.linkCost + node.data.comb:
+            node.linkCost = neighbor.linkCost + node.data.comb 
+            node.link = neighbor
 
-    costo = 0
-    for cada in lst:
-        if(cada.data.comb is not None):
-            
-            costo = costo + cada.data.comb
 
-    return costo
+
+        
+    
+
 
 def Salida():
     print("Inserte el nombre de terreno que le interesa")
