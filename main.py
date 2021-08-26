@@ -40,6 +40,7 @@ class ListGround:
                 else:
                     if temp == self.last: 
                         print("No se encontro un terreno con el nombre "+name)
+                        return
                     else:
                         temp = temp.next
 class Area :
@@ -48,15 +49,22 @@ class Area :
         self.coorx = coorx
         self.coory = coory
 class Ground:
-    def __init__(self,name,bX,bY,fX,fY):
+    def __init__(self,name,bX,bY,fX,fY,mX,nY):
         self.nameGround = name 
         self.raiz = Nodo(Area(None,None,None))
+        self.dimX = mX
+        self.dimY = nY
         self.beginX = bX
         self.beginY = bY
         self.finalX = fX
         self.finalY = fY
+        self.listCamino = []
     def getName(self):
         return self.nameGround
+    def setlistCamino(self, listacam):
+        self.listCamino = listacam
+    def getlistCamino(self):
+        return self.listCamino
     def NewAreaX(self,comb,coorX,coorY):
         print(coorX,coorY)
         if self.raiz.next == None:#Recorrido en X
@@ -196,14 +204,14 @@ def MenuPricipal():
         return#ProcesarArchivo()
     elif option == "3":
         clearConsole()
-        printSalida()
+        Salida()
         
     elif option == "4":
         clearConsole()
         DataStudent()
     elif option == "5":
         clearConsole()
-        return#Graficar()
+        graficGround()
     elif option == "6":
         clearConsole()
         exit()
@@ -229,10 +237,15 @@ def ProsFile():
 def FileUpload():
     print("Ingresa la direccion de archivo")
     dx = input()
-    mydoc = minidom.parse("p1.xml")
+    mydoc = minidom.parse(dx+".xml")
     grounds = mydoc.getElementsByTagName("terreno")
     for terrenos in grounds:
         NameG = terrenos.attributes['nombre'].value
+        CoorF = terrenos.getElementsByTagName("dimension")[0]
+        mx = CoorF.getElementsByTagName("m")
+        Mx = mx[0].firstChild.data
+        ny = CoorF.getElementsByTagName("n")
+        Ny = ny[0].firstChild.data
         CoorI = terrenos.getElementsByTagName("posicioninicio")[0]
         coorx = CoorI.getElementsByTagName("x")
         Bx = coorx[0].firstChild.data
@@ -244,16 +257,14 @@ def FileUpload():
         coory = CoorF.getElementsByTagName("y")
         Fy = coory[0].firstChild.data
         Areas = terrenos.getElementsByTagName("posicion")
-        ActualG = Ground(NameG,int(Bx),int(By),int(Fx),int(Fy))
+        ActualG = Ground(NameG,int(Bx),int(By),int(Fx),int(Fy),int(Mx),int(Ny))
         Grounds.AddFinal(ActualG)
         for Area in Areas:
             Px = Area.attributes['x'].value
             Py = Area.attributes['y'].value
             Comb = Area.firstChild.data
             ActualG.NewAreaX(int(Comb),int(Px),int(Py))
-            #print("Posicion x "+Area.attributes['x'].value+", y "+Area.attributes['y'].value+" Combustible "+Area.firstChild.data)
     MenuPricipal()
-
 def printSalida():
     print("Inserte el nombre de terreno que le interesa")
     nameg = input()
@@ -266,19 +277,56 @@ def printSalida():
             print("x: "+str(auxf.data.coorx)+" y: "+str(auxf.data.coory)+" C: "+str(auxf.data.comb))
             auxf = auxf.next
         aux = aux.down
-
-    
-             
+    print()
     MenuPricipal()
 def  graficGround():
-    dot = graphviz.Digraph(comment='The Round Table')
-    dot.edge('B', 'L', constraint='false')
-    print(dot.source)
-    dot.render('Terreno/Terreno2', view=True) 
+    nameg = input()
+    AuxGround = Grounds.SeachGround(nameg)
+    aux = AuxGround.raiz
+    aux = aux.down
+    strdot = "graph "+AuxGround.nameGround+" {\n"
+    while aux:
+        auxf = aux.next
+        while auxf:
+            strdot= strdot + "  x"+str(auxf.data.coorx)+"y"+str(auxf.data.coory)+' [label = "'+str(auxf.data.comb)+'"];\n'
+            auxf = auxf.next
+        aux = aux.down
+    strdot = strdot+dotEnlace(AuxGround)
+    strdot = strdot + "}"
+    print(strdot)
+    file = open("C:\\Users\\danie\\Desktop\\terreno.dot", "w")
+    file.write(strdot)
+
+def dotEnlace(Ground):
+    aux = Ground.raiz
+    aux = aux.down
+    strdot=""
+    while aux:
+        auxf = aux.next
+        while auxf:
+            if auxf.next != None:
+                if auxf.next.data.comb != None:
+                    tempaux = auxf.next
+                    strdot = strdot+"  x"+str(auxf.data.coorx)+"y"+str(auxf.data.coory)+"--x"+str(tempaux.data.coorx)+"y"+str(tempaux.data.coory)+"[constraint = false]"+"\n"
+            #if auxf.prev != None:
+                #if auxf.prev.data.comb != None:
+                    #tempaux = auxf.prev
+                    #strdot = strdot+"  a"+str(auxf.data.coorx)+str(auxf.data.coory)+"--a"+str(tempaux.data.coorx)+str(tempaux.data.coory)+"\n"
+            if auxf.down != None:
+                if auxf.down.data.comb != None:
+                    tempaux = auxf.down
+                    strdot = strdot+"  x"+str(auxf.data.coorx)+"y"+str(auxf.data.coory)+"--x"+str(tempaux.data.coorx)+"y"+str(tempaux.data.coory)+"[constraint = true]"+"\n"
+            #if auxf.up != None:
+                #if auxf.up.data.comb != None:
+                    #tempaux = auxf.up
+                    #strdot = strdot+"  a"+str(auxf.data.coorx)+str(auxf.data.coory)+"--a"+str(tempaux.data.coorx)+str(tempaux.data.coory)+"\n"
+            auxf = auxf.next
+        aux = aux.down
+    return strdot
 def processGround():
     print("Inserte el nombre de terreno que le interesa")
     nameg = input()
-    AuxGround = Grounds.SeachGround("terreno2")
+    AuxGround = Grounds.SeachGround(nameg)
     aux = AuxGround.raiz
     aux = aux.down
     print(AuxGround.beginX,AuxGround.beginY,AuxGround.finalX,AuxGround.finalY)
@@ -286,7 +334,7 @@ def processGround():
         if aux.data.coory == AuxGround.beginY:
             aux = aux.next
             while aux:
-                if aux.data.coorx == AuxGround.beginY:
+                if aux.data.coorx == AuxGround.beginX:
                     NodoInicio=aux
                     aux = AuxGround.raiz
                     aux = aux.down
@@ -299,8 +347,10 @@ def processGround():
                                     NodoFinal=aux
                                     print(NodoInicio.data.coorx,NodoInicio.data.coory,NodoFinal.data.coorx, NodoFinal.data.coory)
                                     listCamino = camino(NodoInicio,NodoFinal)
+                                    AuxGround.setlistCamino(listCamino)
                                     printCamino(AuxGround,listCamino) 
-                                    return                                   
+                                    input()
+                                    MenuPricipal()                                   
                                 aux = aux.next    
                         aux = aux.down
                 aux = aux.next       
@@ -326,14 +376,17 @@ def printCamino(Ground,listCamino):
         print(fila)
         aux = aux.down
 
-    
+costomin = -1 
+
 
 def camino(inicio,fin):
     lista = []
-    resultado = caminoRecorrer(inicio,lista,fin)
+    global costomin
+    costomin = -1
+    resultado = caminoRecorrer(inicio,lista,fin,True,False)
     return resultado
 
-def caminoRecorrer(actual,listaRecorridos,fin):
+def caminoRecorrer(actual,listaRecorridos,fin,band,costoH):
     if(actual is  None):
         return False
 
@@ -343,27 +396,32 @@ def caminoRecorrer(actual,listaRecorridos,fin):
     if(actual==fin):
         listaRecorridos.append(actual)
         return listaRecorridos
-
+    global costomin
+    costoActual = evaluarCosto(listaRecorridos)
+    if costomin <= costoActual and costomin > -1:
+        return False
+    
     for item in listaRecorridos:
         if(item==actual):
+            
             return  False
 
 
     nuevaLista = listaRecorridos.copy()
     nuevaLista.append(actual)
 
+    if costoH is not False and costoH <= costoActual:
+        return False
 
-    camino1 = caminoRecorrer(actual.next,nuevaLista,fin)
-    camino2 = caminoRecorrer(actual.prev,nuevaLista,fin)
-    camino3 = caminoRecorrer(actual.up,nuevaLista,fin)
-    camino4 = caminoRecorrer(actual.down,nuevaLista,fin)
-
-    costoEvaluar1 = evaluarCosto(camino1)
-    costoEvaluar2 = evaluarCosto(camino2)
-    costoEvaluar3 = evaluarCosto(camino3)
-    costoEvaluar4 = evaluarCosto(camino4)
-
-
+    camino1 = caminoRecorrer(actual.next,nuevaLista,fin,False,costoH)
+    costoEvaluar1 = costoH if camino1 == False else evaluarCosto(camino1) 
+    camino2 = caminoRecorrer(actual.down,nuevaLista,fin,False,costoEvaluar1)
+    costoEvaluar2 = costoH if camino2 == False else evaluarCosto(camino2)
+    camino3 = caminoRecorrer(actual.up,nuevaLista,fin,False,costoEvaluar2)
+    costoEvaluar3 = costoH if camino3 == False else  evaluarCosto(camino3)
+    camino4 = caminoRecorrer(actual.prev,nuevaLista,fin,False,costoEvaluar3)
+    costoEvaluar4 = costoH if camino4 == False else  evaluarCosto(camino4)
+    
     tupla1 = (costoEvaluar1,camino1)
     tupla2 = (costoEvaluar2,camino2)
     tupla3 = (costoEvaluar3,camino3)
@@ -371,8 +429,13 @@ def caminoRecorrer(actual,listaRecorridos,fin):
 
     cmp1 = compararCosto(tupla1,tupla2)
     cmp2 = compararCosto(tupla3,tupla4)
-    return compararCosto(cmp1,cmp2)[1]
-
+    compFinal = compararCosto(cmp1,cmp2)[1]
+    costoFinal = evaluarCosto(compFinal)
+    if costomin == -1 and band: 
+        costomin = costoFinal
+    if costomin > costoFinal and band:
+        costomin = costoFinal
+    return compFinal
 def compararCosto(costo1,costo2):
     if(costo1[0] == False and costo2[0] == False):
         return (False,False)
@@ -396,6 +459,44 @@ def evaluarCosto(lst):
             costo = costo + cada.data.comb
 
     return costo
+
+def Salida():
+    print("Inserte el nombre de terreno que le interesa")
+    nameg = input()
+    AuxGround = Grounds.SeachGround(nameg)
+    Bx = str(AuxGround.beginX)
+    By = str(AuxGround.beginY)
+    Fx =str(AuxGround.finalX)
+    Fy =str(AuxGround.finalY)
+    Mx = str(AuxGround.dimX)
+    Ny = str(AuxGround.dimY)
+    Cb = str(10)
+    listCam = AuxGround.getlistCamino()
+    strxml = '<terreno nombre="'+AuxGround.getName()+'">\n'
+    strxml = strxml + '     <dimension>\n'
+    strxml = strxml + '     <m>'+Mx+'</m>'+'\n'
+    strxml = strxml + '     <n>'+Ny+'</n>'+'\n'
+    strxml = strxml + '     </dimension>\n'
+    strxml = strxml + '     <posicioninicio>\n'
+    strxml = strxml + '     <x>'+Bx+'</x>'+'\n'
+    strxml = strxml + '     <y>'+By+'</y>'+'\n'
+    strxml = strxml + '     </posicioninicio>\n'
+    strxml = strxml + '     <posicionfin>\n'
+    strxml = strxml + '     <x>'+Fx+'</x>'+'\n'
+    strxml = strxml + '     <y>'+Fy+'</y>'+'\n'
+    strxml = strxml + '     </posicionfin>\n'
+    strxml = strxml + '     <combustible>'+Cb+'</combustible>\n'
+    for nod in listCam:
+        strxml = strxml + '     <posicion x="'+str(nod.data.coorx)+'" y="'+str(nod.data.coory)+'">'+str(nod.data.comb)+'</posicion>\n'
+    strxml = strxml + '</terreno>\n'
+    print(strxml)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file = open(dir_path+"\\"+nameg+".xml", "w")
+    file.write(strxml)
+    file.close()
+    input()
+    MenuPricipal()
+
 
 
     
