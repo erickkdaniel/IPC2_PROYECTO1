@@ -73,7 +73,7 @@ class ListGround:
                         graficGround()
                     else:
                         temp = temp.next
-class Area :
+class Area:
     def __init__(self,comb,coorx, coory):
         self.comb = comb
         self.coorx = coorx
@@ -234,7 +234,7 @@ def MenuPricipal1():
         MenuPricipal1()
     elif option == "6":
         clearConsole()
-        exit()
+        quit()
     else:
         clearConsole()
         print("Debe de ingresar alguna opcion valida.")
@@ -294,9 +294,9 @@ def FileUpload():
     dx = input()
     try:
         FileUploadAnalysis(dx)
-    except:
+    except OSError as e:
         clearConsole()
-        print("Archivo no encontrado vuelva a intentarlo")
+        print("Archivo no encontrado vuelva a intentarlo o el archivo no cumple con los requisitos")
         input()
         clearConsole()
         FileUpload()
@@ -541,4 +541,4 @@ def verifi(max,id):
             return False
     return True
 clearConsole()
-MenuPricipal1() 
+MenuPricipal1()
